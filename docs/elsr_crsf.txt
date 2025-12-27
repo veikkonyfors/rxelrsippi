@@ -1,0 +1,171 @@
+/**
+ *
+ * 1. CRSF (Crossfire / ExpressLRS)
+Mitä dataa RX:lle tulee:
+Kanavadata (Channels): 12-16 kanavaa, joista jokainen on yleensä 11-bittinen (välillä 0-2047)
+tai korkearesoluutioinen 16-bittinen.
+
+Linkin tilatiedot (Link Statistics):
+RSSI (Received Signal Strength Indicator)
+LQ (Link Quality, prosentteina)
+SNR (Signal-to-Noise Ratio)
+RF-mode (esim. 250Hz, 500Hz)
+TX:n lämpötila/jännite (jos saatavilla)
+
+Komentoja: Mahdolliset komennot (esim. binding-mode) tai telemetriapyynnöt TX:ltä.
+
+Muoto: Binaarinen, hyvin tiivis paketti. CRSF-protokolla käyttää erillisiä "frame-tyyppejä" eri datalle
+(kanavat, linkki-info, komponenttien tila jne.).
+
+
+
+Miten SpeedyBee RX välittää datan FC:lle?
+RX muuntaa vastaanotetun protokollakohtaisen datan yhdeksi kolmesta FC:n ymmärtämästä sarjamuodosta:
+CRSF-protokollana (suoraan, jos RX tukee CRSF:ää).
+SBUS-protokollana (yleisin, koska Betaflight ymmärtää sen suoraan).
+IBUS-protokollana (jos FlySky-yhteensopiva).
+Spektrum-satelliittimuodossa (jos kyseessä on Spektrum-vastaanotin).
+Tärkeä huomio: RSSI/LQ -tiedot välitetään usein FC:lle kahdella tavalla:
+Protokollan sisällä: CRSF sisällyttää ne suoraan. SBUS/IBUS eivät.
+Erillisenä analogisena signaalina (RSSI-pinni): Jännite, joka vastaa signaalin voimakkuutta.
+Käänteisen telemetrian kautta: FC lähettää RX:lle tietopyynnön, ja RX vastaa tilatiedoilla.
+
+
+
+CRSF Kanavapaketin (Frame Type 0x16) Rakenne
+1. Paketin Yleisrakenne
+
+[Device Address] [Frame Length] [Frame Type] [Payload] [CRC]
+Device Address: 0xEE (Receiver → Flight Controller)
+Frame Length: Payloadin pituus + 2 (tyyppi + CRC)
+Frame Type: 0x16 (RC Channels Packed)
+Payload: Itse kanavatiedot (22 tavua)
+CRC: 8-bit CRC (polynomi 0xD5)
+
+2. 11-bittisen Kanavadatan Pakkaus (Payload)
+Perusperiaate: Jokainen kanava on 11-bittiä (arvo 0-2047). 16 kanavaa pakataan tiiviisti 22 tavuun (22×8 = 176 bittiä, 16×11 = 176 bittiä → täydellinen pakkaus!).
+
+Esimerkki pakkauksesta 4 ensimmäistä kanavaa:
+Oletetaan kanavien arvot:
+Ch1: 1500 → 0x2DC (binääri: 010 1101 1100)
+Ch2: 1000 → 0x1F4 (binääri: 001 1111 0100)
+Ch3: 2000 → 0x3E8 (binääri: 011 1110 1000)
+Ch4: 992 (keski) → 0x1E0 (binääri: 001 1110 0000)
+
+Pakkausprosessi:
+
+text
+Kanava 1 (11 bittiä):    010 1101 1100
+Kanava 2 (11 bittiä):    001 1111 0100
+Kanava 3 (11 bittiä):    011 1110 1000
+Kanava 4 (11 bittiä):    001 1110 0000
+Puretaan bitti-tasolla ensimmäiset 4 tavua:
+
+text
+Tavu 0: [Ch1 bits 0-7]  = 1101 1100 = 0xDC
+Tavu 1: [Ch1 bits 8-10 + Ch2 bits 0-4] = 010 00111 = 0100 0111 = 0x47
+Tavu 2: [Ch2 bits 5-10 + Ch3 bits 0-2] = 11 0100 011 = 1101 0001 = 0xD1
+Tavu 3: [Ch3 bits 3-10] = 1110 1000 0? = 1110 1000 = 0xE8
+...jatkuu samalla logiikalla
+
+3. Täydellinen Esimerkki CRSF Frame
+RC-kanavapaketti normaalissa keskipisteessä (kanavat 1-4: roll, pitch, throttle, yaw):
+
+text
+EE 18 16 DC 47 D1 E8 70 3C 6C 80 80 80 80 80 80 80 80 80 80 80 80 80 80 C5
+EE: Laiteosoite
+18: Pituus (24 tavua, laskee mukaan tyypin ja CRC:n)
+16: Frame Type (RC Channels)
+DC 47 D1 E8 70 3C 6C...: 22 tavua kanavatietoa (16×11 bittiä)
+C5: CRC
+
+
+
+5. Kanavien Kartoitus & Normalisointi
+CRSF:n 11-bittinen kanava vastaa Betaflightin odottamaa arvoa:
+
+Minimi: 172 (0x0AC) → 1000µs PWM
+
+Keski: 992 (0x3E0) → 1500µs PWM
+
+Maksimi: 1811 (0x713) → 2000µs PWM
+
+Muunnoskaava:
+
+text
+PWM_mikrosekuntia = (CRSF_arvo * 0.624) + 881.92
+tai tarkemmin:
+PWM = ((CRSF_arvo - 172) * (1000 / 1639)) + 1000
+
+6. CRSF vs. Muut Protokollat
+SBUS: Myös 11-bittiä, mutta erilainen pakkaus + inversioitu signaali
+
+IBUS: Vain 10-bittiä (0-1023)
+
+CRSF: Ainoa joka sisältää linkkitiedot samassa protokollassa erillisenä frametyyppinä (0x14)
+
+7. Reaaliaikainen Esimerkki
+Lähetin lähettää 500Hz: 2ms välein täsmälleen samanlaisen paketin:
+
+text
+EE 18 16 [22 tavua kanavatietoa] [CRC]
+Jos linkin tila muuttuu, erillinen linkki-statustiivistelmä (Frame Type 0x14) lähetetään noin 10Hz taajuudella:
+
+text
+EE 10 14 [RSSI] [LQ] [SNR] ... [CRC]
+
+
+
+CRSF:n 16 kanavaa eivät ole kiinteästi määriteltyjä samalla tavalla kuin esim. Spektrumilla. Niiden käyttötarkoitus riippuu täysin:
+
+1. Perinteiset 4-kanavasetukset (Mode 2 yleisin)
+text
+Kanava 1 (Ch1): Aileron / Roll      (Vaakakierre)
+Kanava 2 (Ch2): Elevator / Pitch    (Nyökkäys)
+Kanava 3 (Ch3): Throttle            (Kaasu)
+Kanava 4 (Ch4): Rudder / Yaw        (Kääntö)
+Nämä ovat RC-standardit ja käytössä kaikissa protokollissa.
+
+2. Yleisimmät lisäkanavat (Ch5-Ch8)
+text
+Ch5:  ARM / Disarm                 (Moottorien päälle/pois kytkentä)
+Ch6:  Flight Mode                  (Acro, Angle, Horizon, jne.)
+Ch7:  Beeper / Buzzer              "Beeperi"-äänimerkin aktivointi
+Ch8:  Blackbox log activation      Lokin käynnistys/keskeytys
+Nämä määritellään Betaflightissa "Modes"-välilehdellä.
+
+3. FPV-lentoon liittyvät toiminnot (Ch9-Ch12)
+text
+Ch9:  VTX Control                  (Video-lähettimen teho/kanava)
+Ch10: Camera Tilt / Pan            (Kameran kallistus/kääntö)
+Ch11: OSD Menu Navigation          OSD-valikon selaaminen
+Ch12: GPS Rescue / RTH aktivointi  (Paluu kotiin -toiminto)
+
+4. Edistyneet toiminnot (Ch13-Ch16)
+text
+Ch13: LED Strip Control            (Valojuustojen värit/efektit)
+Ch14: Script Control               (Lua-skriptien kontrolli)
+Ch15: Trainer Mode                 (Opettaja/oppilas-tila)
+Ch16: Custom / Reserved            (Käyttäjäkohtainen)
+
+
+Yleisimmät sanomatyypit:
+Tyyppi (HEX)	Nimi	Kuvaus
+0x02	GPS	GPS-data
+0x03	Vario	Korkeus/liiketiedot
+0x07	Battery	Akkudata
+0x08	Barometer	Ilmanpaine
+0x09	Heartbeat	Sydänlyönti
+0x10	OpenTX Sync	OpenTX synkronointi
+0x14	Attitude	Asento (pitch/roll/yaw)
+0x16	Flight Mode	Lentotila
+0x1E	Device Ping	Laite ping
+0x21	Device Info	Laiteinfo
+0x28	RC Channels	Kanavadata
+0x29	RC Channels Packed	Pakattu kanavadata
+0x2A	Subset RC Channels	Osakanavat
+0x32	Parameter Settings	Parametrit
+0x3A	Elrs V2	ELRS v2 spesifinen
+
+*
+ */

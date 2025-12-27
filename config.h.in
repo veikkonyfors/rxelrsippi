@@ -1,0 +1,2 @@
+#define rxelrsippi_VERSION_MAJOR @rxelrsippi_VERSION_MAJOR@
+#define rxelrsippi_VERSION_MINOR @rxelrsippi_VERSION_MINOR@
