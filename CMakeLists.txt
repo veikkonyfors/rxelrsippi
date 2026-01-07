@@ -6,7 +6,7 @@ project (rxelrsippi
 	DESCRIPTION "Receive elrs/crsf UDB messages and write them to FC UART")
 
 # This project will output an executable file
-add_executable(${PROJECT_NAME} main.c receiver.c)
+add_executable(${PROJECT_NAME} main.c receiver.c uart.c)
 
 # Create a simple configuration header
 configure_file(config.h.in config.h)

@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 
 #include "crsf.h"
+#include "uart.h"
 
 #define BUF_SIZE 64
 #define PORT 22777
@@ -23,13 +24,16 @@ int receiver(void) {
     //crsf_frame_union_t tx_frame;
     crsf_channels_t channels;
 
+    // Uart port to write
+    const char *uart_port = "/dev/pts/3";
+    const int baudrate = 420000;
+
     // 1. reate UDP-socket
     recv_sock = socket(PF_INET, SOCK_DGRAM, 0);
     if (recv_sock == -1) {
-        perror("socket() virhe");
+        perror("socket() error");
         exit(EXIT_FAILURE);
     }
-
 
     // 2. setup local address
     memset(&serv_addr, 0, sizeof(serv_addr));
@@ -40,22 +44,19 @@ int receiver(void) {
 
     // 3. bind socket
     if (bind(recv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1) {
-        perror("bind() virhe");
+        perror("bind() error");
         close(recv_sock);
         exit(EXIT_FAILURE);
     }
 
-    printf("UDP-vastaanottaja kuuntelee portissa %d...\n", PORT);
+    printf("UDP-receiver listening on port %d...\n", PORT);
 
 
-    // Set RC channels (example values)
-    channels.ch1 = 1500;  // Throttle
-    channels.ch2 = 1500;  // Roll
-    channels.ch3 = 1500;  // Pitch
-    channels.ch4 = 1500;  // Yaw
-    channels.ch5 = 992;   // Arm switch
-    // ... set other channels
-
+    // Initialize UART
+    if (uart_init(uart_port, baudrate) != 0) {
+        fprintf(stderr, "UART init failed\n");
+        return 1;
+    }
 
     // 4. Listen and receive
     while (1) {
@@ -93,6 +94,8 @@ int receiver(void) {
 						printf("Disarm: %4d, Flight Mode: %4d, Buzzer: %4d, Blackbox log activation: %4d\n", channels.ch5, channels.ch6, channels.ch7, channels.ch8);
 						printf("VTX Control: %4d, Pan: %4d, OSD Menu Navigation: %4d, RTH activation: %4d\n", channels.ch9, channels.ch10, channels.ch11, channels.ch12);
 						printf("LED Strip Control: %4d, Script Control: %4d, Trainer Mode: %4d, Custom / Reserved: %4d\n", channels.ch13, channels.ch14, channels.ch15, channels.ch16);
+
+						//uart_send(pchannels, sizeof(channels));
 					}
                     break;
                 default:
