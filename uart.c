@@ -97,7 +97,7 @@ int uart_init(const char *port, int baudrate) {
 }
 
 
-static int uart_send(const uint8_t *data, size_t len) {
+int uart_send(const uint8_t *data, size_t len) {
     if (uart_fd < 0) {
         fprintf(stderr, "UART uninitialized\n");
         return -1;

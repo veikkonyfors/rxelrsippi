@@ -9,9 +9,8 @@
 #include "uart.h"
 
 #define BUF_SIZE 64
-#define PORT 22777
 
-int receiver(void) {
+int receiver(char *IP, int port, char *uart) {
 
 	// Socket variables
     int recv_sock;
@@ -40,7 +39,7 @@ int receiver(void) {
     serv_addr.sin_family = AF_INET;
     // Receive from any address
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(port);
 
     // 3. bind socket
     if (bind(recv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1) {
@@ -49,7 +48,7 @@ int receiver(void) {
         exit(EXIT_FAILURE);
     }
 
-    printf("UDP-receiver listening on port %d...\n", PORT);
+    printf("UDP-receiver listening on port %d...\n", port);
 
 
     // Initialize UART
@@ -62,7 +61,6 @@ int receiver(void) {
     while (1) {
         clnt_addr_size = sizeof(clnt_addr);
 
-        // Vastaanotetaan datagrammi
         str_len = recvfrom(recv_sock, rx_data, BUF_SIZE - 1, 0,
                            (struct sockaddr*)&clnt_addr, &clnt_addr_size);
 
@@ -95,7 +93,7 @@ int receiver(void) {
 						printf("VTX Control: %4d, Pan: %4d, OSD Menu Navigation: %4d, RTH activation: %4d\n", channels.ch9, channels.ch10, channels.ch11, channels.ch12);
 						printf("LED Strip Control: %4d, Script Control: %4d, Trainer Mode: %4d, Custom / Reserved: %4d\n", channels.ch13, channels.ch14, channels.ch15, channels.ch16);
 
-						//uart_send(pchannels, sizeof(channels));
+						uart_send(rx_data, sizeof(crsf_rc_channels_packed_t));
 					}
                     break;
                 default:
@@ -103,26 +101,26 @@ int receiver(void) {
                 	printf("Received frame type: 0x%02X\n", type);
 
             }
-        } else {
+        } else {  // Wasn't valid crsf frame, print it out
 
-			// Lisätään null-terminaattori
 			rx_data[str_len] = '\0';
 
-			// Tulostetaan viesti ja sen lähde
 			printf("[%s:%d] (noncrsf): %s\n",
 				   inet_ntoa(clnt_addr.sin_addr),
 				   ntohs(clnt_addr.sin_port),
 				   rx_data);
-
-			// **TÄMÄ ON "KIRJOITA TOISEEN PUTKEEN" -VAIHE:**
-			// Tässä esimerkissä "toinen putki" on standardituloste (stdout).
-			// Jos haluaisit kirjoittaa toiseen UDP-putkeen, käyttäisit
-			// tässä kohdassa erillistä sendto() -kutsua *uuteen* kohdeosoitteeseen.
         }
 
     }
 
-    // Ei päädytä tänne (ikuinen silmukka)
+    // Never reached
     close(recv_sock);
     return 0;
 }
+/*
+pappa@pappa-ThinkPad-X270:~$ cat /dev/pts/4 | hexdump -C
+00000000  c8 18 16 01 10 c0 00 08  50 00 03 1c 00 01 09 28  |........P......(|
+00000010  83 00 06 40 80 02 18 e0  00 1c 00 00 00 00 00 00  |...@............|
+00000020  0f e0 92 03 e7 55 00 00  68 0d 00 00 00 00 00 00  |.....U..h.......|
+00000030  a0 a8 61 ad 58 7f 00 00  24 40 4c ad 58 7f 00 00  |..a.X...$@L.X...|
+*/
