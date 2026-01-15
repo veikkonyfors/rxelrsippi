@@ -10,6 +10,19 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+/**
+ * @file main.c
+ *
+ * Created on: Jan 6, 2026
+ * Author: pappa
+ *
+ * @brief command line program to start receiver for crsf packaged data from given UDP port for writing it to given UART port on FC
+ * @param -p UDP port from where to read (default 22777).
+ * @param -t UART port to write (default /dev/pts/3).
+ * @return 0.
+ * @note To be run on RPI connected to drone's FC UART.
+ * @note Never ending loop to be terminated with SIGINT or SIGKILL.
+ */
 int main(int argc, char *argv[]) {
 
 	int opt;
@@ -35,7 +48,7 @@ int main(int argc, char *argv[]) {
 		}
 
     printf("Call receiver \n");
-    receiver(ip, port, tty);
+    receiver(port, tty);
 
     return 0;
 }

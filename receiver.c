@@ -10,7 +10,7 @@
 
 #define BUF_SIZE 64
 
-int receiver(char *IP, int port, char *uart) {
+int receiver(int port, char *uart) {
 
 	// Socket variables
     int recv_sock;
@@ -117,10 +117,3 @@ int receiver(char *IP, int port, char *uart) {
     close(recv_sock);
     return 0;
 }
-/*
-pappa@pappa-ThinkPad-X270:~$ cat /dev/pts/4 | hexdump -C
-00000000  c8 18 16 01 10 c0 00 08  50 00 03 1c 00 01 09 28  |........P......(|
-00000010  83 00 06 40 80 02 18 e0  00 1c 00 00 00 00 00 00  |...@............|
-00000020  0f e0 92 03 e7 55 00 00  68 0d 00 00 00 00 00 00  |.....U..h.......|
-00000030  a0 a8 61 ad 58 7f 00 00  24 40 4c ad 58 7f 00 00  |..a.X...$@L.X...|
-*/
