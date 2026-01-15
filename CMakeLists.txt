@@ -6,14 +6,18 @@ project (rxelrsippi
 	DESCRIPTION "Receive elrs/crsf UDB messages and write them to FC UART")
 
 # This project will output an executable file
-add_executable(${PROJECT_NAME} main.c receiver.c uart.c)
+add_executable(${PROJECT_NAME} main.c receiver.c)
 
 # Create a simple configuration header
 configure_file(config.h.in config.h)
 
 # Include the configuration header in the build
-target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" ../crsf)
+target_include_directories(${PROJECT_NAME} PUBLIC "${PROJECT_BINARY_DIR}" ../crsf ../uart)
 
 # Add crsf library
 target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../crsf/build/cmake.run.linux.x86_64.Local") # -L../crsf/build/cmake.run.linux.x86_64.Local
 target_link_libraries(${PROJECT_NAME} crsf) # -lcrsf
+
+# Add uart library
+target_link_directories(${PROJECT_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/../uart/build/cmake.run.linux.x86_64.Local") # -L../uart/build/cmake.run.linux.x86_64.Local
+target_link_libraries(${PROJECT_NAME} uart) # -luart
