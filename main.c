@@ -26,11 +26,10 @@
 int main(int argc, char *argv[]) {
 
 	int opt;
-	char *ip = "127.0.0.1";
 	int port = 22777;
 	char *tty = "/dev/pts/3";
 
-	while ((opt = getopt(argc, argv, "i:p:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "p:t:")) != -1) {
 			switch (opt) {
 				case 'i':
 					ip = optarg;
@@ -42,7 +41,7 @@ int main(int argc, char *argv[]) {
 					tty = optarg;
 					break;
 				default:
-					fprintf(stderr, "Usage: %s [-i ipaddr] [-p UDP port] [-t UART]\n", argv[0]);
+					fprintf(stderr, "Usage: %s [-p UDP port] [-t UART]\n", argv[0]);
 					exit(EXIT_FAILURE);
 			}
 		}
