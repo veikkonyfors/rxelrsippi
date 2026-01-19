@@ -31,9 +31,6 @@ int main(int argc, char *argv[]) {
 
 	while ((opt = getopt(argc, argv, "p:t:")) != -1) {
 			switch (opt) {
-				case 'i':
-					ip = optarg;
-					break;
 				case 'p':
 					port = atoi(optarg);
 					break;
