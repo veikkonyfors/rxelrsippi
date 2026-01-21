@@ -23,8 +23,7 @@ int receiver(int port, char *uart) {
     //crsf_frame_union_t tx_frame;
     crsf_channels_t channels;
 
-    // Uart port to write
-    const char *uart_port = "/dev/pts/3";
+    // Uart specs
     const int baudrate = 420000;
 
     // 1. reate UDP-socket
@@ -52,7 +51,7 @@ int receiver(int port, char *uart) {
 
 
     // Initialize UART
-    if (uart_init(uart_port, baudrate) != 0) {
+    if (uart_init(uart, baudrate) != 0) {
         fprintf(stderr, "UART init failed\n");
         return 1;
     }

@@ -14,6 +14,7 @@
  * @return 0.
  * @note To be run on RPI connected to drone's FC UART.
  * @note Never ending loop to be terminated with SIGINT or SIGKILL.
+ * @note Receiver accepts UDP connection from any IP address.
  */
 int receiver(int port, char *uart);
 

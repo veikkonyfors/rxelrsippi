@@ -22,12 +22,13 @@
  * @return 0.
  * @note To be run on RPI connected to drone's FC UART.
  * @note Never ending loop to be terminated with SIGINT or SIGKILL.
+ * @note Receiver accepts UDP connection from any IP address.
  */
 int main(int argc, char *argv[]) {
 
 	int opt;
 	int port = 22777;
-	char *tty = "/dev/pts/3";
+	char *tty = "/tmp/ttyV0";
 
 	while ((opt = getopt(argc, argv, "p:t:")) != -1) {
 			switch (opt) {
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-    printf("Call receiver \n");
+    printf("Call receiver on %d, %s\n", port, tty);
     receiver(port, tty);
 
     return 0;
