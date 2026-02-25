@@ -89,14 +89,6 @@ int receiver(int port, char *uart) {
 					    crsf_to_string(rx_data, crsf_frame_as_string, sizeof(crsf_frame_as_string));
 					    printf("%s", crsf_frame_as_string);
 
-						/* Process flight data
-						crsf_unpack_channels(rx_channels_packed->data, pchannels);
-						printf("\n\nRoll: %4d, Pitch: %4d Throttle: %4d, Yaw: %4d\n", channels.ch1, channels.ch2, channels.ch3, channels.ch4);
-						printf("Disarm: %4d, Flight Mode: %4d, Buzzer: %4d, Blackbox log activation: %4d\n", channels.ch5, channels.ch6, channels.ch7, channels.ch8);
-						printf("VTX Control: %4d, Pan: %4d, OSD Menu Navigation: %4d, RTH activation: %4d\n", channels.ch9, channels.ch10, channels.ch11, channels.ch12);
-						printf("LED Strip Control: %4d, Script Control: %4d, Trainer Mode: %4d, Custom / Reserved: %4d\n", channels.ch13, channels.ch14, channels.ch15, channels.ch16);
-						*/
-
 						uart_send(rx_data, sizeof(crsf_rc_channels_packed_t));
 					}
                     break;
