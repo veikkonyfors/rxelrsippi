@@ -31,18 +31,18 @@ int main(int argc, char *argv[]) {
 	char *tty = "/tmp/ttyV0";
 
 	while ((opt = getopt(argc, argv, "p:t:")) != -1) {
-			switch (opt) {
-				case 'p':
-					port = atoi(optarg);
-					break;
-				case 't':
-					tty = optarg;
-					break;
-				default:
-					fprintf(stderr, "Usage: %s [-p UDP port] [-t UART]\n", argv[0]);
-					exit(EXIT_FAILURE);
-			}
+		switch (opt) {
+			case 'p':
+				port = atoi(optarg);
+				break;
+			case 't':
+				tty = optarg;
+				break;
+			default:
+				fprintf(stderr, "Usage: %s [-p UDP port] [-t UART]\n", argv[0]);
+				exit(EXIT_FAILURE);
 		}
+	}
 
     printf("Call receiver on %d, %s\n", port, tty);
     receiver(port, tty);
