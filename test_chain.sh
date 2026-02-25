@@ -13,10 +13,10 @@ sleep 1
 
 ./build/cmake.run.linux.x86_64.Local/rxelrsippi -p 22777 -t /tmp/ttyV0 & # Start receiving from UDP and writing to UART
 
-cat /tmp/ttyV1 | hexdump -C &
+#cat /tmp/ttyV1 | hexdump -C &
 
-#./oma_lukija -p /tmp/ttyV1 & # Read from UART and dump
+~/dronews/dmpcrsfuart/build/cmake.run.linux.x86_64.Local/dmpcrsfuart -t /tmp/ttyV1 & # Read from UART and dump
 
-../txelrsip/build/cmake.run.linux.x86_64.Local/txelrsip -i 127.0.0.1 -p 22777 # Start transmitting
+~/dronews/txelrsip/build/cmake.run.linux.x86_64.Local/txelrsip -i 127.0.0.1 -p 22777 # Start transmitting
 
 killall -u pappa socat txelrsip rxelrsippi 2>/dev/null
